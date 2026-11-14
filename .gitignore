@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# macOS
+.DS_Store
+
+# Packed plugin tarballs
+*.tgz
+
+# Test coverage
+coverage/
+
+# Local environment
+.env

@@ -1,0 +1,3 @@
+- insert:
+    - id: ubuntu-packaging
+      name: dsh-ubuntu-packaging

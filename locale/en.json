@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Ubuntu packaging",
+    "description": "Six Ubuntu and Debian source-package tools plus the ubuntu-packaging skill for DeepSeek Harness: inspect a debian/ tree (deb822 control, changelog, rules, DEP-3 patches, DEP-8 tests), lint it against a lintian-compatible tag set, scaffold a new debian/ directory, plan dpkg-buildpackage or sbuild builds and lintian/autopkgtest runs, and diagnose a build log you paste or point at. Five tools are read-only; scaffold writes only inside the package's debian/ directory. No tool runs a shell or uses the network. Real builds and tests still need Ubuntu Linux 22.04 or newer with dpkg-buildpackage, sbuild, lintian and autopkgtest, installed with root.",
+    "detail": "docs/DETAIL.md"
+  }
+}
