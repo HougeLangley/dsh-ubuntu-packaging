@@ -65,7 +65,12 @@ test('scaffold writes all seven file classes with contract content', async (t) =
 
   assert.match(result.files['debian/rules'], /^#!\/usr\/bin\/make -f\n/)
   assert.match(result.files['debian/rules'], /%:\n\tdh \$@/)
-  assert.equal((await stat(join(sourceDir, 'debian/rules'))).mode & 0o111, 0o111)
+  if (process.platform === 'win32') {
+    // Windows cannot store POSIX execute bits; chmod only toggles read-only.
+    assert.ok(await stat(join(sourceDir, 'debian/rules')))
+  } else {
+    assert.equal((await stat(join(sourceDir, 'debian/rules'))).mode & 0o111, 0o111)
+  }
   assert.equal(result.files['debian/source/format'], '3.0 (quilt)\n')
   assert.equal(result.files['debian/changelog'].split('\n')[0], 'hello (2.10-0ubuntu1) resolute; urgency=medium')
   assert.match(
@@ -84,7 +89,11 @@ test('scaffold writes all seven file classes with contract content', async (t) =
   assert.match(result.files['debian/tests/control'], /^Restrictions: superficial$/m)
   assert.match(result.files['debian/tests/smoke'], /^#!\/bin\/sh$/m)
   assert.match(result.files['debian/tests/smoke'], /command -v hello/)
-  assert.equal((await stat(join(sourceDir, 'debian/tests/smoke'))).mode & 0o111, 0o111)
+  if (process.platform === 'win32') {
+    assert.ok(await stat(join(sourceDir, 'debian/tests/smoke')))
+  } else {
+    assert.equal((await stat(join(sourceDir, 'debian/tests/smoke'))).mode & 0o111, 0o111)
+  }
 
   assert.equal(result.lint.errorCount, 0)
   assert.equal(result.lint.ok, true)

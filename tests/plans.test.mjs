@@ -47,7 +47,9 @@ test('sbuild binary plans are ordered and carry the required commands and notes'
 
   assert.deepEqual(plan.phases.map((entry) => entry.name), BUILD_PHASES)
   assert.equal(phase(plan, 'Build').commands[0].cmd, 'sbuild --dist=resolute --arch=amd64')
-  assert.equal(commands(plan).includes(`cd ${packageDir}`), true)
+  const cdCommand = commands(plan).find((command) => command.startsWith('cd '))
+  assert.ok(cdCommand)
+  assert.ok(cdCommand.includes(packageDir), 'the plan must cd into the package directory')
   assert.equal(plan.prerequisites[0].command, 'sudo apt update')
   assert.equal(plan.prerequisites[0].required, true)
   assert.ok(plan.prerequisites.some((entry) => entry.command.includes('sbuild') && entry.command.includes('mmdebstrap')))

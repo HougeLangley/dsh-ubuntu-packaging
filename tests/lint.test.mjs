@@ -157,7 +157,11 @@ test('loadPackage exposes the layout and public summaries', async (t) => {
 
   const rules = rulesSummary(pkg.parsed.rules)
   assert.equal(rules.dhSequencer, true)
-  assert.equal(rules.executable, true)
+  assert.equal(
+    rules.executable,
+    process.platform !== 'win32',
+    'POSIX execute bits are unavailable on Windows',
+  )
   assert.equal(rules.buildsystem, 'autotools')
   assert.deepEqual(rules.overrides, [])
 
@@ -420,7 +424,13 @@ test('secondary rules cover the remaining contract table', async (t) => {
     'debian/tests/control': 'Tests: other\nDepends: @\n',
     'debian/tests/other': '#!/bin/sh\ntrue\n',
   })
-  assert.ok(codes(await lintPackage({ path: notExecutable })).includes('U035'))
+  const notExecutableCodes = codes(await lintPackage({ path: notExecutable }))
+  if (process.platform === 'win32') {
+    // Windows stores no POSIX execute bit, so U035 is intentionally skipped.
+    assert.ok(!notExecutableCodes.includes('U035'))
+  } else {
+    assert.ok(notExecutableCodes.includes('U035'))
+  }
 
   const noShebang = await writePackage(t, {
     'debian/tests/control': 'Tests: other\nDepends: @\n',
