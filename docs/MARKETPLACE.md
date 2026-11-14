@@ -1,8 +1,6 @@
 # Marketplace submission kit
 
-**Status: not submitted, not listed.** `dsh-ubuntu-packaging` is not in the
-`awesome-dsh-plugin/awesome-dsh-plugin` catalog, not in its generated site, and not in any
-market index yet. The material below is ready to submit; nothing here claims a listing.
+**Status: submitted on 2026-11-14 as [PR #15208](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/15208); not listed yet.** The one-day repository-age gate is the only known open item: the repository was created on 2026-11-14, so the gate should clear after 2026-11-15. Nothing here claims that a listing has been granted.
 
 ## What the upstream catalog accepts
 
