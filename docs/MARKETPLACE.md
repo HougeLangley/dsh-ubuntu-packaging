@@ -28,7 +28,7 @@ category: tools
 description:
   en: 'Ubuntu and Debian source-package tools for DeepSeek Harness: inspect debian/, lint with lintian-compatible codes, scaffold a debian/ directory, plan dpkg-buildpackage or sbuild builds and autopkgtest runs, and diagnose build logs. Read-only except scaffold; no shell execution and no network access.'
   zh: '面向 DeepSeek Harness 的 Ubuntu/Debian 源码包工具：检查 debian/、按 lintian 兼容标签静态检查、生成 debian/ 骨架、规划 dpkg-buildpackage 或 sbuild 构建与 autopkgtest 测试，并诊断构建日志。除 scaffold 外均为只读；不启动 shell，不联网。'
-tarball: https://github.com/HougeLangley/dsh-ubuntu-packaging/releases/download/v0.1.0/dsh-ubuntu-packaging-0.1.0.tgz
+tarball: https://github.com/HougeLangley/dsh-ubuntu-packaging/releases/download/v0.1.1/dsh-ubuntu-packaging-0.1.1.tgz
 ```
 
 Notes on the fields:
@@ -37,7 +37,7 @@ Notes on the fields:
   this line, not from `package.json` keywords or the market UI.
 - The English description is single-quoted because it contains `: `. Unquoted, YAML reads
   that colon as a nested key and the file fails to parse.
-- `tarball` is pinned to the `v0.1.0` tag, so the versioned asset name cannot 404 when a
+- `tarball` is pinned to the `v0.1.1` tag, so the versioned asset name cannot 404 when a
   later release is cut. Do not switch it to `releases/latest/download/` while the asset name
   carries the version.
 - `icon:` is intentionally omitted. The catalog accepts GitHub-hosted raster images
@@ -53,11 +53,11 @@ Notes on the fields:
    topic; the submission gate checks all three.
 2. Confirm `package.json` declares `dsh.bundle` with `./cordis.patch.yml`, and that the file
    is present at the repository root.
-3. Publish the `v0.1.0` GitHub release with the asset `dsh-ubuntu-packaging-0.1.0.tgz`, then
+3. Publish the `v0.1.1` GitHub release with the asset `dsh-ubuntu-packaging-0.1.1.tgz`, then
    check the exact tarball URL returns 200:
 
    ```sh
-   curl -fsSI https://github.com/HougeLangley/dsh-ubuntu-packaging/releases/download/v0.1.0/dsh-ubuntu-packaging-0.1.0.tgz | head -n 1
+   curl -fsSI https://github.com/HougeLangley/dsh-ubuntu-packaging/releases/download/v0.1.1/dsh-ubuntu-packaging-0.1.1.tgz | head -n 1
    ```
 
 4. Fork `awesome-dsh-plugin/awesome-dsh-plugin`.
@@ -86,7 +86,7 @@ Adds one entry for `HougeLangley/dsh-ubuntu-packaging` under `tools`.
 
 - Repository: https://github.com/HougeLangley/dsh-ubuntu-packaging
 - Install: `dsh plugin --profile web add github:HougeLangley/dsh-ubuntu-packaging`
-- Tarball: https://github.com/HougeLangley/dsh-ubuntu-packaging/releases/download/v0.1.0/dsh-ubuntu-packaging-0.1.0.tgz
+- Tarball: https://github.com/HougeLangley/dsh-ubuntu-packaging/releases/download/v0.1.1/dsh-ubuntu-packaging-0.1.1.tgz
 - Six host tools plus the `ubuntu-packaging` runtime skill for Ubuntu and Debian source
   packages. Read-only except `ubuntu_scaffold_package`, which writes only into the package's
   `debian/` directory. No tool runs a shell or uses the network.
@@ -98,7 +98,7 @@ Tick these on the branch before opening the PR.
 - [ ] `package.json` declares `dsh.bundle` pointing at `cordis.patch.yml`
 - [ ] Repository is public and older than one day
 - [ ] Repository has the `dsh-plugin` topic
-- [ ] The `v0.1.0` release is published and the tarball URL returns 200
+- [ ] The `v0.1.1` release is published and the tarball URL returns 200
 - [ ] Only `data/plugins/HougeLangley__dsh-ubuntu-packaging.yml` is added; the generated
       READMEs are untouched
 - [ ] Description matches the code: six tools, one skill, five read-only tools, one
@@ -114,7 +114,7 @@ Tick these on the branch before opening the PR.
       profile, then restart and confirm the six tools and the `ubuntu-packaging` skill load.
 - [ ] Repository is public, at least one day old, not archived, and carries the
       `dsh-plugin` topic.
-- [ ] The `v0.1.0` release exists with the exact asset name used in `tarball:`.
+- [ ] The `v0.1.1` release exists with the exact asset name used in `tarball:`.
 - [ ] `tarball:` is pinned to the tag and returns 200 (`curl -fsSI`).
 - [ ] The description ends with a period, contains no marketing claims, and every claim in
       it is visible in the repository (six tools, one skill, the read-only boundary).

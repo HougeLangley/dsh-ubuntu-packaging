@@ -417,7 +417,8 @@ test('secondary rules cover the remaining contract table', async (t) => {
 
   assert.ok((await codesOf({ 'debian/watch': WATCH.replace('version=4\n', '') })).includes('U023'))
 
-  assert.ok((await codesOf({ 'debian/tests/control': 'Tests: smoke\n' })).includes('U032'))
+  assert.ok((await codesOf({ 'debian/tests/control': 'Depends: @\n' })).includes('U032'))
+  assert.ok(!(await codesOf({ 'debian/tests/control': 'Tests: smoke\n' })).includes('U032'))
   assert.ok((await codesOf({ 'debian/tests/control': 'Tests: ghost\nDepends: @\n' })).includes('U034'))
 
   const notExecutable = await writePackage(t, {
@@ -484,4 +485,177 @@ test('watch capture groups may live in the URL and watch issue lines point at th
   const missingVersion = (await lintPackage({ path: noVersion })).issues.find((entry) => entry.code === 'U023')
   assert.ok(missingVersion)
   assert.equal(missingVersion.line, 1)
+})
+
+const HELLO_CHANGELOG = [
+  'hello (2.10-2ubuntu1) resolute; urgency=medium',
+  '',
+  '  * New upstream release.',
+  '',
+  ' -- Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>  Thu, 13 Nov 2026 10:00:00 +0800',
+  '',
+  'hello-debhelper (1.3-17) frozen unstable; urgency=low',
+  '',
+  '  * Historical Debian entry.',
+  '',
+  ' -- Old Maintainer <old@example.com>  Mon, 01 Jan 2001 00:00:00 +0000',
+  '',
+].join('\n')
+
+const HELLO_COPYRIGHT = [
+  'This package was debianized by the Debian hello maintainers.',
+  '',
+  'It was downloaded from https://www.gnu.org/software/hello/',
+  '',
+  'Upstream Author: The GNU Project',
+  '',
+  'Copyright: 1992-2026 Free Software Foundation, Inc.',
+  '',
+  'This program is free software; you can redistribute it and/or modify',
+  'it under the terms of the GNU General Public License as published by',
+  'the Free Software Foundation; either version 3, or (at your option)',
+  'any later version.',
+  '',
+].join('\n')
+
+test('the official hello-2.10 shape lints with 0 errors and 0 warnings', async (t) => {
+  const root = await writePackage(t, {
+    'debian/changelog': HELLO_CHANGELOG,
+    'debian/control': CONTROL
+      .replace('Standards-Version: 4.7.4', 'Standards-Version: 4.6.2')
+      .replace('Rules-Requires-Root: no', 'Rules-Requires-Root: no\nTestsuite: autopkgtest')
+      .replace('Description: Classic greeting program', 'Description: example package based on GNU hello'),
+    'debian/copyright': HELLO_COPYRIGHT,
+    'debian/watch': 'version=4\nhttps://ftp.gnu.org/gnu/hello/hello-(.+)\\.tar\\.gz\n',
+    'debian/patches/series': 'fix-manpage.patch\n',
+    'debian/patches/0001-fix-build.patch': null,
+    'debian/patches/fix-manpage.patch': [
+      'Description: Install the manpage in the correct directory',
+      '',
+      '--- a/hello.1',
+      '+++ b/hello.1',
+      '',
+    ].join('\n'),
+    'debian/tests/control': [
+      'Test-Command: hello',
+      'Restrictions: superficial',
+      '',
+      'Tests: upstream',
+      'Restrictions: superficial',
+      '',
+    ].join('\n'),
+    'debian/tests/upstream': '#!/bin/sh\nset -eu\nhello --version\n',
+  })
+  await chmod(join(root, 'debian/tests/upstream'), 0o755)
+
+  const result = await lintPackage({ path: root })
+  assert.equal(result.ok, true)
+  assert.equal(result.errorCount, 0)
+  assert.equal(result.warningCount, 0)
+  assert.ok(!result.issues.some((entry) => entry.code === 'U001'), 'multi-codename distributions must parse')
+  assert.ok(!result.issues.some((entry) => entry.code === 'U032'), 'Test-Command is valid DEP-8')
+  assert.deepEqual(
+    [...new Set(result.issues.map((entry) => entry.code))].sort(),
+    ['U008', 'U013', 'U020', 'U021', 'U022', 'U029', 'U030', 'U039'],
+  )
+  for (const code of ['U013', 'U020', 'U021', 'U022', 'U029', 'U030']) {
+    assert.equal(result.issues.find((entry) => entry.code === code).severity, 'info', code)
+  }
+
+  const summary = changelogSummary((await loadPackage(root)).parsed.changelog)
+  assert.deepEqual(summary.distributions, ['resolute'])
+})
+
+test('DEP-8 Test-Command entries need neither Tests nor Depends', async (t) => {
+  const root = await writePackage(t, {
+    'debian/tests/control': [
+      'Test-Command: hello',
+      'Restrictions: superficial',
+      '',
+      'Tests: smoke',
+      'Restrictions: superficial',
+      '',
+    ].join('\n'),
+  })
+  const pkg = await loadPackage(root)
+  const result = await lintPackage({ path: root })
+  assert.ok(!result.issues.some((entry) => entry.code === 'U032'))
+  const summary = testsSummary(pkg)
+  assert.deepEqual(summary.testCommands, ['hello'])
+  assert.equal(summary.entries[0].testCommand, 'hello')
+  assert.deepEqual(summary.entries[0].depends, [])
+
+  // A Test-Command value is a shell command, never a script filename.
+  const commandOnly = await writePackage(t, {
+    'debian/tests/control': 'Test-Command: definitely-not-a-script\nRestrictions: superficial\n',
+  })
+  const commandCodes = codes(await lintPackage({ path: commandOnly }))
+  assert.ok(!commandCodes.includes('U032'))
+  assert.ok(!commandCodes.includes('U034'))
+})
+
+test('traditional copyright is informational while incomplete DEP-5 stays a warning', async (t) => {
+  const traditional = await writePackage(t, { 'debian/copyright': HELLO_COPYRIGHT })
+  const traditionalResult = await lintPackage({ path: traditional })
+  for (const code of ['U020', 'U021', 'U022']) {
+    const entry = traditionalResult.issues.find((issue) => issue.code === code)
+    assert.ok(entry, code)
+    assert.equal(entry.severity, 'info', code)
+  }
+  assert.equal(traditionalResult.warningCount, 0)
+
+  const incomplete = await writePackage(t, {
+    'debian/copyright': 'Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/\nUpstream-Name: hello\n',
+  })
+  const incompleteResult = await lintPackage({ path: incomplete })
+  for (const code of ['U021', 'U022']) {
+    const entry = incompleteResult.issues.find((issue) => issue.code === code)
+    assert.ok(entry, code)
+    assert.equal(entry.severity, 'warning', code)
+  }
+})
+
+test('a multi-codename distribution is legal and never raises U001/U004', async (t) => {
+  const root = await writePackage(t, {
+    'debian/changelog': CHANGELOG.replace('resolute;', 'frozen unstable;'),
+  })
+  const result = await lintPackage({ path: root })
+  assert.ok(!result.issues.some((entry) => entry.code === 'U001'))
+  assert.ok(!result.issues.some((entry) => entry.code === 'U004'))
+  assert.equal(result.ok, true)
+})
+
+test('historical changelog formats never make the current package an error', async (t) => {
+  const legacy = await writePackage(t, {
+    'debian/changelog': CHANGELOG
+      + '\nhello (1.3-6); priority=LOW\n\n  * Ancient entry.\n\n -- Old Maintainer <old@example.com>  Mon, 01 Jan 2001 00:00:00 +0000\n',
+  })
+  const legacyResult = await lintPackage({ path: legacy })
+  assert.equal(legacyResult.ok, true)
+  assert.equal(legacyResult.errorCount, 0)
+  assert.equal(legacyResult.warningCount, 0)
+  assert.ok(!legacyResult.issues.some((entry) => entry.code === 'U001'))
+  assert.ok(!legacyResult.issues.some((entry) => entry.code === 'U004'))
+  const pkg = await loadPackage(legacy)
+  assert.equal(pkg.parsed.changelog.entries.length, 2)
+  assert.deepEqual(pkg.parsed.changelog.entries[1].distributions, [])
+  assert.equal(pkg.parsed.changelog.entries[1].distribution, '')
+
+  const malformedHistory = await writePackage(t, {
+    'debian/changelog': CHANGELOG
+      + '\nnot a changelog header at all\n\n  * Ancient entry.\n\n -- Old Maintainer <old@example.com>  Mon, 01 Jan 2001 00:00:00 +0000\n',
+  })
+  const malformedHistoryResult = await lintPackage({ path: malformedHistory })
+  assert.equal(malformedHistoryResult.ok, true)
+  assert.equal(malformedHistoryResult.errorCount, 0)
+  assert.ok(!malformedHistoryResult.issues.some((entry) => entry.code === 'U001'))
+
+  const brokenCurrent = await writePackage(t, {
+    'debian/changelog': 'this is not a changelog header\n\n  * Broken.\n',
+  })
+  const brokenCurrentResult = await lintPackage({ path: brokenCurrent })
+  const u001 = brokenCurrentResult.issues.find((entry) => entry.code === 'U001')
+  assert.ok(u001)
+  assert.equal(u001.severity, 'error')
+  assert.equal(brokenCurrentResult.errorCount, 1)
 })

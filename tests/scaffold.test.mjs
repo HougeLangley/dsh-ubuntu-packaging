@@ -62,6 +62,7 @@ test('scaffold writes all seven file classes with contract content', async (t) =
   assert.match(control, /^Architecture: any$/m)
   assert.match(control, /^Depends: \$\{misc:Depends\}, \$\{shlibs:Depends\}$/m)
   assert.match(control, /^Description: Classic greeting program$/m)
+  assert.match(control, /^ This package provides the hello command\.$/m)
 
   assert.match(result.files['debian/rules'], /^#!\/usr\/bin\/make -f\n/)
   assert.match(result.files['debian/rules'], /%:\n\tdh \$@/)

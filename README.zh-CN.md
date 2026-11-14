@@ -40,7 +40,7 @@ dsh plugin --profile web add ./dsh-ubuntu-packaging
 
 ## 环境要求
 
-- **dsh** 0.2.1-rc.5 及以上（0.2.x 系列）；**Node.js 22 及以上**（仅 ESM，无 TypeScript，无构建步骤）。
+- **dsh** 0.2.0 及以上（0.2.x 系列）；**Node.js 22 及以上**（仅 ESM，无 TypeScript，无构建步骤）。
 - 真实构建与包测试需要 **Ubuntu 22.04 及以上**（或 Debian 衍生版）。工具本身只做文件读写，在 dsh 能运行的任意系统上都能用。
 - 目标基线：**Ubuntu 26.04 LTS "resolute"**，是 lint 与各计划的默认值。行为有差异时会单独标注 Ubuntu 25.10 "questing" 与 24.04 LTS "noble"。
 - 真实构建与测试需要宿主机上的 Ubuntu 工具链，并以 root 安装：`dpkg-buildpackage`、`sbuild`、`lintian`、`autopkgtest`。各计划会列出自己需要的前置依赖。Ubuntu 25.10 及以上推荐使用 sbuild 的 `unshare` backend，`schroot` 已不再推荐。

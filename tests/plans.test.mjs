@@ -46,18 +46,19 @@ test('sbuild binary plans are ordered and carry the required commands and notes'
   const plan = await buildPlan({ packageDir })
 
   assert.deepEqual(plan.phases.map((entry) => entry.name), BUILD_PHASES)
-  assert.equal(phase(plan, 'Build').commands[0].cmd, 'sbuild --dist=resolute --arch=amd64')
+  assert.equal(phase(plan, 'Build').commands[0].cmd, 'LC_ALL=C sbuild --dist=resolute --arch=amd64')
   const cdCommand = commands(plan).find((command) => command.startsWith('cd '))
   assert.ok(cdCommand)
   assert.ok(cdCommand.includes(packageDir), 'the plan must cd into the package directory')
   assert.equal(plan.prerequisites[0].command, 'sudo apt update')
   assert.equal(plan.prerequisites[0].required, true)
   assert.ok(plan.prerequisites.some((entry) => entry.command.includes('sbuild') && entry.command.includes('mmdebstrap')))
-  assert.match(commands(plan).join('\n'), /lintian --info \.\.\/hello_2\.10-0ubuntu1_amd64\.changes/)
+  assert.match(commands(plan).join('\n'), /LC_ALL=C lintian --info \.\.\/hello_2\.10-0ubuntu1_amd64\.changes/)
   assert.match(commands(plan).join('\n'), /dpkg-deb -I \.\.\/hello_2\.10-0ubuntu1_amd64\.deb/)
   assert.equal(plan.checklist.length, 6)
 
   const notes = plan.notes.join('\n')
+  assert.match(notes, /LC_ALL=C/)
   assert.match(notes, /source-only upload/i)
   assert.match(notes, /local binary build/i)
   assert.match(notes, /unshare/i)
@@ -75,32 +76,32 @@ test('sbuild source+binary uses --source and prepares a source-only upload', asy
   const packageDir = await makePackage(t)
   const plan = await buildPlan({ packageDir, mode: 'source+binary', tool: 'sbuild' })
 
-  assert.equal(phase(plan, 'Build').commands[0].cmd, 'sbuild --source --dist=resolute --arch=amd64')
+  assert.equal(phase(plan, 'Build').commands[0].cmd, 'LC_ALL=C sbuild --source --dist=resolute --arch=amd64')
 
   const sourceOnly = await buildPlan({ packageDir, mode: 'source', tool: 'sbuild' })
   assert.ok(phase(sourceOnly, 'Prepare source').commands.some((entry) =>
-    entry.cmd === 'dpkg-buildpackage --build=source --no-check-builddeps --no-pre-clean'))
-  assert.equal(phase(sourceOnly, 'Build').commands[0].cmd, 'sbuild --source --dist=resolute --arch=amd64')
+    entry.cmd === 'LC_ALL=C dpkg-buildpackage --build=source --no-check-builddeps --no-pre-clean'))
+  assert.equal(phase(sourceOnly, 'Build').commands[0].cmd, 'LC_ALL=C sbuild --source --dist=resolute --arch=amd64')
 })
 
 test('dpkg-buildpackage supports binary and source modes', async (t) => {
   const packageDir = await makePackage(t)
   const binary = await buildPlan({ packageDir, tool: 'dpkg-buildpackage' })
-  assert.equal(phase(binary, 'Build').commands[0].cmd, 'dpkg-buildpackage -us -uc -b')
+  assert.equal(phase(binary, 'Build').commands[0].cmd, 'LC_ALL=C dpkg-buildpackage -us -uc -b')
 
   const source = await buildPlan({ packageDir, tool: 'dpkg-buildpackage', mode: 'source' })
-  assert.equal(phase(source, 'Build').commands[0].cmd, 'dpkg-buildpackage -us -uc -S')
+  assert.equal(phase(source, 'Build').commands[0].cmd, 'LC_ALL=C dpkg-buildpackage -us -uc -S')
   assert.ok(phase(source, 'Prepare source').commands.some((entry) =>
-    entry.cmd === 'dpkg-buildpackage --build=source --no-check-builddeps --no-pre-clean'))
+    entry.cmd === 'LC_ALL=C dpkg-buildpackage --build=source --no-check-builddeps --no-pre-clean'))
 
   const full = await buildPlan({ packageDir, tool: 'dpkg-buildpackage', mode: 'source+binary' })
-  assert.equal(phase(full, 'Build').commands[0].cmd, 'dpkg-buildpackage -us -uc')
+  assert.equal(phase(full, 'Build').commands[0].cmd, 'LC_ALL=C dpkg-buildpackage -us -uc')
 })
 
 test('debuild is supported for binary builds', async (t) => {
   const packageDir = await makePackage(t)
   const plan = await buildPlan({ packageDir, tool: 'debuild' })
-  assert.equal(phase(plan, 'Build').commands[0].cmd, 'debuild -us -uc')
+  assert.equal(phase(plan, 'Build').commands[0].cmd, 'LC_ALL=C debuild -us -uc')
 })
 
 test('signing and a PPA add debsign, dput and the source upload command', async (t) => {
@@ -114,7 +115,7 @@ test('signing and a PPA add debsign, dput and the source upload command', async 
   })
 
   const upload = phase(plan, 'Sign and upload').commands
-  assert.equal(upload[0].cmd, 'dpkg-buildpackage --build=source --no-check-builddeps --no-pre-clean')
+  assert.equal(upload[0].cmd, 'LC_ALL=C dpkg-buildpackage --build=source --no-check-builddeps --no-pre-clean')
   assert.equal(upload[1].cmd, 'debsign ../hello_2.10-0ubuntu1_source.changes')
   assert.equal(upload[1].optional, false)
   assert.equal(upload[2].cmd, 'dput ppa:jane/hello ../hello_2.10-0ubuntu1_source.changes')
@@ -133,7 +134,7 @@ test('paths containing spaces are quoted so commands stay copy-pasteable', async
   const cd = commands(plan).find((command) => command.startsWith('cd '))
   assert.ok(cd)
   assert.match(cd, /^cd '.*hello with space'$/)
-  assert.ok(phase(plan, 'Build').commands[0].cmd.startsWith('sbuild '))
+  assert.ok(phase(plan, 'Build').commands[0].cmd.startsWith('LC_ALL=C sbuild '))
 })
 
 test('build plan rejects invalid mode, tool and ppa values', async (t) => {
@@ -159,6 +160,7 @@ test('LXD test plans build an image and run autopkgtest with the lxd backend', a
   assert.match(all, /sudo apt purge -y hello/)
   assert.match(all, /dpkg -s hello/)
   assert.equal(plan.dep8, null, 'a package with debian/tests/control needs no skeleton')
+  assert.match(plan.notes.join('\n'), /LC_ALL=C/)
   assert.ok(plan.prerequisites.some((entry) => entry.command.includes('snap install lxd')))
 })
 
@@ -175,7 +177,7 @@ test('local test plans run without a virtualization backend', async (t) => {
   const packageDir = await makePackage(t)
   const plan = await testPlan({ packageDir, mode: 'local' })
   const all = commands(plan).join('\n')
-  assert.match(all, /sudo autopkgtest --apt-upgrade --shell-fail --output-dir \.\.\/autopkgtest-out .* -- null/)
+  assert.match(all, /sudo LC_ALL=C autopkgtest --apt-upgrade --shell-fail --output-dir \.\.\/autopkgtest-out .* -- null/)
   assert.ok(!all.includes('autopkgtest-build-lxd'))
 })
 
@@ -227,4 +229,31 @@ test('failure triage covers the required classes and the checklist is complete',
 
   await assert.rejects(() => testPlan({ packageDir, mode: 'cloud' }), /mode/)
   await assert.rejects(() => testPlan({}), /packageDir/)
+})
+
+test('every log-producing command carries LC_ALL=C across all plans', async (t) => {
+  const packageDir = await makePackage(t)
+  const tools = 'sbuild|dpkg-buildpackage|debuild|lintian|autopkgtest(?:-build-lxd|-buildvm-ubuntu-cloud)?'
+  const startsWithTool = new RegExp(`^(?:sudo )?(?:LC_ALL=C )?(?:${tools})\\b`)
+  const prefixed = new RegExp(`^(?:sudo )?LC_ALL=C (?:${tools})\\b`)
+
+  const plans = []
+  for (const tool of ['sbuild', 'dpkg-buildpackage', 'debuild']) {
+    for (const mode of ['binary', 'source', 'source+binary']) {
+      plans.push(await buildPlan({ packageDir, tool, mode, sign: true, ppa: 'jane/hello' }))
+    }
+  }
+  for (const mode of ['local', 'lxd', 'qemu', 'ppa']) {
+    plans.push(await testPlan({ packageDir, mode, ...(mode === 'ppa' ? { ppa: 'jane/hello' } : {}) }))
+  }
+
+  let checked = 0
+  for (const plan of plans) {
+    for (const command of commands(plan)) {
+      if (!startsWithTool.test(command)) continue
+      assert.ok(prefixed.test(command), `missing LC_ALL=C: ${command}`)
+      checked += 1
+    }
+  }
+  assert.ok(checked >= 20, `expected many log-producing commands, saw ${checked}`)
 })

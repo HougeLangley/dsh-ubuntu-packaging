@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-14
+
+### Fixed
+
+- Verified against Ubuntu 26.04.1 LTS and the official `hello 2.10-5build1` source package, whose `lintian` run is clean: the plugin no longer reports false errors or warnings for that package.
+- Changelog parsing accepts space-separated multi-distribution headers (`frozen unstable`) and early Debian headers (`priority=LOW`); `U001` validates only the current entry and historical entries are parsed best-effort.
+- DEP-8 parsing accepts `Test-Command` entries and treats `Depends` as optional; script existence and execute-bit checks apply only to `Tests:` entries.
+- Non-DEP-5 `debian/copyright` and style-only advice (`U013`, `U029`, `U030`) are informational; an incomplete DEP-5 file still warns.
+- Build-log diagnosis recognises localized (Chinese) messages for unmet build dependencies, missing headers, missing pkg-config packages, permission errors and command-not-found, in addition to English.
+- Build and test plans prefix log-producing commands with `LC_ALL=C`, and `ubuntu_test_plan` returns a `notes` field explaining why.
+- Host compatibility widened: `engines.dsh` and the `@deepseek-ai/dsh-tools` peer now accept `>=0.2.0-0 <0.3.0-0`.
+- `ubuntu_scaffold_package` writes a long description in `debian/control`, removing the real `lintian` `extended-description-is-empty` warning from its output.
+- Test suite grew to 91 tests, including the real `hello` shape and a Chinese-locale build log.
+
+[0.1.1]: https://github.com/HougeLangley/dsh-ubuntu-packaging/releases/tag/v0.1.1
+
 ## [0.1.0] - 2026-11-14
 
 ### Added

@@ -40,7 +40,7 @@ Restart `dsh web` (or the desktop app) after any of these. The bundle is ESM wit
 
 ## Requirements
 
-- **dsh** 0.2.1-rc.5 or newer in the 0.2.x line; **Node.js 22 or newer** (ESM only, no TypeScript, no build step).
+- **dsh** 0.2.0 or newer in the 0.2.x line; **Node.js 22 or newer** (ESM only, no TypeScript, no build step).
 - **Ubuntu 22.04 or newer** (or a Debian derivative) for real builds and package tests. The tools themselves are file readers and writers, so they run wherever dsh runs.
 - Target baseline: **Ubuntu 26.04 LTS "resolute"**, the default for lint and for every plan. Ubuntu 25.10 "questing" and 24.04 LTS "noble" are called out where behaviour differs.
 - Real builds and tests need the Ubuntu toolchain on the host, installed with root (`sudo apt`): `dpkg-buildpackage`, `sbuild`, `lintian` and `autopkgtest`. Each plan lists the prerequisites it needs. On Ubuntu 25.10 and newer, sbuild's `unshare` backend is the recommended one; `schroot` is legacy.

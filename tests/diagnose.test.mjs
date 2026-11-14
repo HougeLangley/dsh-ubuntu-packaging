@@ -216,3 +216,33 @@ test('autopkgtest summary lines are diagnosed and set the test phase', () => {
   assert.equal(mixed.findings.at(-1).evidence, 'smoke FAIL')
   assert.ok(mixed.nextActions.length >= 3 && mixed.nextActions.length <= 6)
 })
+
+test('zh_CN localized build logs are still diagnosed', () => {
+  const vm = diagnoseLog('dpkg-checkbuilddeps: 错误: unmet build dependencies: libdoesnotexist-dev')
+  assert.equal(vm.findings.length, 1)
+  assert.equal(vm.findings[0].id, 'missing-build-dep')
+  assert.match(vm.findings[0].evidence, /libdoesnotexist-dev/)
+  assert.equal(vm.summary.errors, 1)
+
+  const cases = [
+    ['src/x.c:1:10: 致命错误： bar.h：没有那个文件或目录', 'missing-header'],
+    ["未找到包 'libfoo'", 'missing-pkg-config'],
+    ['dpkg-checkbuilddeps: 错误: 未满足的构建依赖: libfoo-dev', 'missing-build-dep'],
+    ['dpkg-checkbuilddeps: 警告: 未满足的构建依赖: libfoo-dev', 'missing-build-dep'],
+    ['dh_auto_configure: 错误: make returned 2', 'dh-failure'],
+    ['debian/rules: 权限不够', 'rules-permission'],
+    ['sbuild: 未找到命令', 'command-not-found'],
+    ['configure: 错误: C compiler cannot create executables', 'configure-error'],
+    ['dpkg-source: 错误: cannot represent change', 'dpkg-source-error'],
+    ['dpkg-buildpackage: 错误: debian/rules build subprocess returned 2', 'build-command-failed'],
+    ['dpkg-shlibdeps: 错误: no dependency information found', 'shlibdeps'],
+  ]
+  for (const [line, id] of cases) {
+    const result = diagnoseLog(line)
+    assert.equal(result.findings[0]?.id, id, line)
+  }
+
+  assert.equal(diagnoseLog('dh: 未找到命令').findings[0].id, 'debhelper-compat')
+  assert.equal(diagnoseLog('src/x.c:1:10: fatal error: bar.h: 没有那个文件或目录').findings[0].id, 'missing-header')
+  assert.equal(diagnoseLog('cat: /tmp/x: Permission denied').findings[0].id, 'permission-denied')
+})

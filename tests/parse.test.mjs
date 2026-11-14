@@ -352,3 +352,78 @@ test('date and version helpers accept the canonical forms', () => {
   assert.equal(compareDottedVersions('4.6.2', '4.7.4'), -1)
   assert.equal(compareDottedVersions('4.8.0', '4.7.4'), 1)
 })
+
+test('parseChangelog accepts multi-codename distributions and records distributions', () => {
+  const text = [
+    'hello (2.10-2ubuntu1) resolute; urgency=medium',
+    '',
+    '  * Current entry.',
+    '',
+    ' -- Jane Doe <jane@example.com>  Thu, 13 Nov 2026 10:00:00 +0800',
+    '',
+    'hello-debhelper (1.3-17) frozen unstable; urgency=low',
+    '',
+    '  * Historical Debian entry.',
+    '',
+    ' -- Old Maintainer <old@example.com>  Mon, 01 Jan 2001 00:00:00 +0000',
+    '',
+  ].join('\n')
+
+  const parsed = parseChangelog(text)
+  assert.equal(parsed.entries.length, 2)
+  assert.equal(parsed.issues.length, 0, 'a space-separated distribution list is legal')
+  assert.deepEqual(parsed.entries[0].distributions, ['resolute'])
+  assert.deepEqual(parsed.entries[1].distributions, ['frozen', 'unstable'])
+  assert.equal(parsed.entries[1].distribution, 'frozen unstable')
+  assert.deepEqual(parsed.distributions, ['resolute'])
+})
+
+test('parseTestsControl parses the Test-Command shorthand', () => {
+  const parsed = parseTestsControl([
+    'Test-Command: hello',
+    'Restrictions: superficial',
+    '',
+    'Tests: upstream',
+    'Restrictions: superficial',
+  ].join('\n'))
+
+  assert.equal(parsed.entries[0].testCommand, 'hello')
+  assert.deepEqual(parsed.entries[0].tests, [])
+  assert.deepEqual(parsed.entries[0].depends, [])
+  assert.equal(parsed.entries[1].testCommand, null)
+  assert.deepEqual(parsed.entries[1].tests, ['upstream'])
+  assert.deepEqual(parsed.issues, [])
+})
+
+test('parseChangelog best-effort parses early Debian priority= headers', () => {
+  const text = [
+    'hello (2.10-2ubuntu1) resolute; urgency=medium',
+    '',
+    '  * Current entry.',
+    '',
+    ' -- Jane Doe <jane@example.com>  Thu, 13 Nov 2026 10:00:00 +0800',
+    '',
+    'hello (1.3-6); priority=LOW',
+    '',
+    '  * Early Debian entry without a distribution.',
+    '',
+    ' -- Old Maintainer <old@example.com>  Mon, 01 Jan 2001 00:00:00 +0000',
+    '',
+  ].join('\n')
+
+  const parsed = parseChangelog(text)
+  assert.equal(parsed.entries.length, 2)
+  assert.equal(parsed.issues.length, 0)
+  assert.equal(parsed.entries[1].version, '1.3-6')
+  assert.deepEqual(parsed.entries[1].distributions, [])
+  assert.equal(parsed.entries[1].distribution, '')
+  assert.equal(parsed.entries[1].urgency, 'LOW')
+  assert.equal(parsed.distribution, 'resolute')
+
+  const withDistribution = parseChangelog(
+    'hello (1.2-3) unstable; priority=low\n\n  * Old.\n\n -- Old <old@example.com>  Mon, 01 Jan 2001 00:00:00 +0000\n',
+  )
+  assert.equal(withDistribution.entries[0].distribution, 'unstable')
+  assert.equal(withDistribution.entries[0].urgency, 'low')
+  assert.equal(withDistribution.issues.length, 0)
+})

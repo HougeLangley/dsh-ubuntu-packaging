@@ -1,6 +1,6 @@
 {
   "name": "dsh-ubuntu-packaging",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Ubuntu packaging toolkit for DeepSeek Harness: inspect, lint, scaffold and plan debian/ source packages, then test and diagnose the resulting .deb builds.",
   "type": "module",
   "main": "./lib/index.js",
@@ -21,15 +21,46 @@
     "LICENSE",
     "CHANGELOG.md"
   ],
-  "engines": { "node": ">=22", "dsh": ">=0.2.1-rc.5 <0.3.0-0" },
-  "keywords": ["dsh", "dsh-plugin", "deepseek-harness", "ubuntu", "debian", "packaging", "deb", "sbuild", "autopkgtest", "lintian"],
+  "engines": {
+    "node": ">=22",
+    "dsh": ">=0.2.0-0 <0.3.0-0"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "ubuntu",
+    "debian",
+    "packaging",
+    "deb",
+    "sbuild",
+    "autopkgtest",
+    "lintian"
+  ],
   "license": "MIT",
   "author": "HougeLangley",
-  "repository": { "type": "git", "url": "git+https://github.com/HougeLangley/dsh-ubuntu-packaging.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HougeLangley/dsh-ubuntu-packaging.git"
+  },
   "homepage": "https://github.com/HougeLangley/dsh-ubuntu-packaging#readme",
-  "bugs": { "url": "https://github.com/HougeLangley/dsh-ubuntu-packaging/issues" },
-  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } },
-  "peerDependencies": { "@deepseek-ai/dsh-tools": ">=0.2.1-rc.5 <0.2.2-0 || >=0.2.2-rc.1 <0.3.0-0" },
-  "peerDependenciesMeta": { "@deepseek-ai/dsh-tools": { "optional": true } },
-  "scripts": { "test": "node --test \"tests/**/*.test.mjs\"" }
+  "bugs": {
+    "url": "https://github.com/HougeLangley/dsh-ubuntu-packaging/issues"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-tools": ">=0.2.0-0 <0.3.0-0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-tools": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.mjs\""
+  }
 }
